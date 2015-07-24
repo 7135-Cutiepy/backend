@@ -1,0 +1,24 @@
+{
+  "name": "express-casify",
+  "version": "1.0.0",
+  "description": "A simple express example with session login with CAS",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.13.1",
+    "express-session": "^1.11.3",
+    "xml2js": "^0.4.9"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-live-server": "0.0.23"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.gatech.edu/gtjourney/express-casify.git"
+  },
+  "author": "Brian Davidson <bdavidson@gatech.edu>",
+  "license": "MIT"
+}
