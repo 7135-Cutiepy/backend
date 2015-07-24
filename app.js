@@ -26,47 +26,47 @@ app.get('/*', function (req, res) {
 * in PHP we do as $_SESSION['var name'].
 * Here we do like this.
 */
-  if(sess.username !== undefined){
-  	//Already logged in before
-  	res.send('Hello '+sess.username+'!');
+if(sess.username !== undefined){
+    //Already logged in before
+    res.send('Hello '+sess.username+'!');
   }else if(req.query.ticket !== undefined){
-  	//Check to see if this is a login request
-  	var serviceValidate = 'https://login.gatech.edu/cas/serviceValidate?service='+encodeURIComponent(baseURL)+'&ticket='+encodeURIComponent(req.query.ticket);
-  	console.log(serviceValidate);
+    //Check to see if this is a login request
+    var serviceValidate = 'https://login.gatech.edu/cas/serviceValidate?service='+encodeURIComponent(baseURL)+'&ticket='+encodeURIComponent(req.query.ticket);
+    console.log(serviceValidate);
 
-	https.get(serviceValidate, function(validateResponse){
-	  var body = '';
+    https.get(serviceValidate, function(validateResponse){
+      var body = '';
       validateResponse.on('data', function(chunk) {
-      	body += chunk;
+        body += chunk;
       });
       validateResponse.on('end', function(){
         //handling the response
         parseString(body, function (err, result) {
           if(result !== undefined && result['cas:serviceResponse'] !== undefined){
-          	if(result['cas:serviceResponse']['cas:authenticationSuccess'] !== undefined){
-          	  var sucessResult = result['cas:serviceResponse']['cas:authenticationSuccess'];
-	      	  sess.username = sucessResult[0]['cas:user'][0];
+            if(result['cas:serviceResponse']['cas:authenticationSuccess'] !== undefined){
+              var sucessResult = result['cas:serviceResponse']['cas:authenticationSuccess'];
+              sess.username = sucessResult[0]['cas:user'][0];
 
-	      	  //redirect back to where we started
-	      	  res.redirect(sess.requestedURL);
-	      	  delete sess.requestedURL;
-          	}else{
-          	  //Login Failed Try Again: May cause infinite browser redirect loop
-          	  res.redirect(302,'https://login.gatech.edu/cas/login?service='+encodeURIComponent(baseURL));
-          	}
+            //redirect back to where we started
+            res.redirect(sess.requestedURL);
+            delete sess.requestedURL;
+          }else{
+              //Login Failed Try Again: May cause infinite browser redirect loop
+              res.redirect(302,'https://login.gatech.edu/cas/login?service='+encodeURIComponent(baseURL));
+            }
             console.dir(JSON.stringify(result));
           }else{
-          	res.send('Unable To Process CAS Response')
+            res.send('Unable To Process CAS Response')
           }
         });
-	  });
+      });
     }).on('error', function(e) {
       res.send('HTTP Validation error');
     });
   }else{
     sess.requestedURL = req.url;
-  	//This is unlogged in user redirect them
-  	res.redirect(302,'https://login.gatech.edu/cas/login?service='+encodeURIComponent(baseURL));
+    //This is unlogged in user redirect them
+    res.redirect(302,'https://login.gatech.edu/cas/login?service='+encodeURIComponent(baseURL));
   }
 });
 
