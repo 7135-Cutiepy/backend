@@ -3,6 +3,10 @@ var session = require('express-session')
 var https = require('https');
 var parseString = require('xml2js').parseString;
 
+var os = require("os");
+var hostname = os.hostname()
+console.log("Current Hostname: %s",hostname)
+
 var app = express();
 
 app.set('trust proxy', 1) // trust first proxy
@@ -15,6 +19,15 @@ app.use(session({
 
 var sess;
 app.get('/*', function (req, res) {
+  if(req.hostname != hostname){
+    var hostnameWithPort = req.get('host').replace(req.hostname,hostname);
+    var fullUrl = req.protocol + '://' + hostnameWithPort + req.originalUrl;
+    res.redirect(302,fullUrl);
+    return;
+  }
+
+  console.log();
+
   var baseURL = req.protocol + '://' + req.get('host');//should fix this to work with req.url but have to trim off ticket info to work
   sess=req.session;
 
