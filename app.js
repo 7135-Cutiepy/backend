@@ -4,8 +4,30 @@ var https = require('https');
 var parseString = require('xml2js').parseString;
 
 var os = require("os");
-var hostname = os.hostname()
-console.log("Current Hostname: %s",hostname)
+var hostname = os.hostname();
+console.log("Current Hostname: %s",hostname);
+
+var ips = [];
+var nics = os.networkInterfaces();
+Object.keys(nics).forEach(function (nicId){
+  var nic = nics[nicId]
+  nics[nicId].forEach(function (address){
+    if(!address['internal'] && address['family']=='IPv4' && address['mac'] != '00:00:00:00:00:00'){
+      ips.push(address['address']);
+    }
+  });
+});
+
+console.log("Current IPs: %s",ips);
+
+var dns = require("dns");
+var hostnames = [];
+ips.forEach(function (ip){
+  dns.reverse(ip, function (err, ipNames){
+    console.log("Found additional hostnames %s",ipNames);
+    Array.prototype.push.apply(hostnames,ipNames);
+  });
+})
 
 var app = express();
 
@@ -20,7 +42,10 @@ app.use(session({
 var sess;
 app.get('/*', function (req, res) {
   if(req.hostname != hostname){
-    var hostnameWithPort = req.get('host').replace(req.hostname,hostname);
+
+    console.log(hostnames);
+
+    var hostnameWithPort = req.get('host').replace(req.hostname,hostnames.pop());
     var fullUrl = req.protocol + '://' + hostnameWithPort + req.originalUrl;
     res.redirect(302,fullUrl);
     return;
