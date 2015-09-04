@@ -20,12 +20,21 @@ Object.keys(nics).forEach(function (nicId){
 
 console.log("Current IPs: %s",ips);
 
+if ( typeof String.prototype.endsWith != 'function' ) {
+  String.prototype.endsWith = function( str ) {
+    return this.substring( this.length - str.length, this.length ) === str;
+  }
+};
+
 var dns = require("dns");
-var hostnames = [];
 ips.forEach(function (ip){
   dns.reverse(ip, function (err, ipNames){
     console.log("Found additional hostnames %s",ipNames);
-    Array.prototype.push.apply(hostnames,ipNames);
+    ipNames.forEach(function(ipName){
+      if(ipName.endsWith('gatech.edu')){
+        hostname = ipNames[0];
+      }
+    });
   });
 })
 
@@ -42,10 +51,7 @@ app.use(session({
 var sess;
 app.get('/*', function (req, res) {
   if(req.hostname != hostname){
-
-    console.log(hostnames);
-
-    var hostnameWithPort = req.get('host').replace(req.hostname,hostnames.pop());
+    var hostnameWithPort = req.get('host').replace(req.hostname,hostname);
     var fullUrl = req.protocol + '://' + hostnameWithPort + req.originalUrl;
     res.redirect(302,fullUrl);
     return;
