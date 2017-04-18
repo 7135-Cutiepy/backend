@@ -1,6 +1,7 @@
 var express = require('express');
 var session = require('express-session')
 var https = require('https');
+var http = require('http');
 var parseString = require('xml2js').parseString;
 
 var os = require("os");
@@ -49,7 +50,7 @@ app.use(session({
 }))
 
 var sess;
-app.get('/*', function (req, res) {
+app.get('/', function (req, res) {
   if(req.hostname != hostname){
     var hostnameWithPort = req.get('host').replace(req.hostname,hostname);
     var fullUrl = req.protocol + '://' + hostnameWithPort + req.originalUrl;
@@ -112,6 +113,16 @@ if(sess.username !== undefined){
     //This is unlogged in user redirect them
     res.redirect(302,'https://login.gatech.edu/cas/login?service='+encodeURIComponent(baseURL));
   }
+});
+
+app.get('/test', function(req, res) {
+  http.get('http://m.gatech.edu/api/coursecatalog/term', function(response) {
+    let rawData = '';
+    response.on('data', (chunk) => { rawData += chunk; });
+    response.on('end', () => {
+      res.status(response.statusCode).send(rawData);
+    });
+  });
 });
 
 var server = app.listen(3000, function () {
