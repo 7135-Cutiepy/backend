@@ -3,6 +3,8 @@ var session = require('express-session')
 var https = require('https');
 var http = require('http');
 var parseString = require('xml2js').parseString;
+var mongojs = require('mongojs');
+var db = mongojs('courses', ['terms', 'classes']);
 
 var os = require("os");
 var hostname = os.hostname();
@@ -77,7 +79,6 @@ if(sess.username !== undefined){
   }else if(req.query.ticket !== undefined){
     //Check to see if this is a login request
     var serviceValidate = 'https://login.gatech.edu/cas/serviceValidate?service='+encodeURIComponent(baseURL)+'&ticket='+encodeURIComponent(req.query.ticket);
-    console.log(serviceValidate);
 
     https.get(serviceValidate, function(validateResponse){
       var body = '';
@@ -91,6 +92,7 @@ if(sess.username !== undefined){
             if(result['cas:serviceResponse']['cas:authenticationSuccess'] !== undefined){
               var sucessResult = result['cas:serviceResponse']['cas:authenticationSuccess'];
               sess.username = sucessResult[0]['cas:user'][0];
+              console.log(validateResponse);
 
             //redirect back to where we started
             res.redirect(sess.requestedURL);
@@ -115,13 +117,64 @@ if(sess.username !== undefined){
   }
 });
 
-app.get('/test', function(req, res) {
-  http.get('http://m.gatech.edu/api/coursecatalog/term', function(response) {
+app.get('/updateTerms', function(req, res) {
+  http.get({
+    hostname: 'm.gatech.edu',
+    path: '/api/coursecatalog/term',
+    headers: {
+      'Cookie': 'PHPSESSID=4o1hrsh6uiij11rdddbr2rpkr1'
+    }
+  }, function(response) {
     let rawData = '';
     response.on('data', (chunk) => { rawData += chunk; });
     response.on('end', () => {
-      res.status(response.statusCode).send(rawData);
+      res.status(response.statusCode).send(JSON.parse(rawData));
+      db.terms.remove('{}');
+      db.terms.insert(JSON.parse(rawData), function(err, result) {
+        if (err) {
+          console.log(err);
+        }
+      });
     });
+  });
+});
+
+app.get('/listTerms', function(req,res) {
+  db.terms.find(function (err, docs) {
+  	res.send(docs);
+  });
+});
+
+app.get('/updateClasses', function(req, res) {
+  http.get({
+    hostname: 'm.gatech.edu',
+    path: '/api/coursecatalog/term/201708/classes?Subject=CS',
+    headers: {
+      'Cookie': 'PHPSESSID=4o1hrsh6uiij11rdddbr2rpkr1'
+    }
+  }, function(response) {
+    let rawData = '';
+    response.on('data', (chunk) => { rawData += chunk; });
+    response.on('end', () => {
+      res.status(response.statusCode).send(JSON.parse(rawData));
+      db.classes.remove('{}');
+      db.classes.insert(JSON.parse(rawData), function(err, result) {
+        if (err) {
+          console.log(err);
+        }
+      });
+    });
+  });
+});
+
+app.get('/listClasses', function(req,res) {
+  db.classes.find(function (err, docs) {
+    // Set CORS headers
+  	res.setHeader('Access-Control-Allow-Origin', '*');
+  	res.setHeader('Access-Control-Request-Method', '*');
+  	res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+  	res.setHeader('Access-Control-Allow-Headers', '*');
+  	res.send(docs);
   });
 });
 
